@@ -1,5 +1,11 @@
+#include <iostream>
 #include <cstdio>
 #include <string>
+
+extern "C" {
+#include <termios.h>
+#include <sys/ioctl.h>
+}
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -59,16 +65,32 @@ struct Image {
 };
 
 
-int main (int argc, char** argv) {
-    Image image {argv[1]};
+int 
+main(int argc, char* argv[]) 
+{
+	/* configure stdin so we can query terminal info */
+	struct termios settings;
+	tcgetattr(0, &settings);
+	settings.c_lflag &= ~(ECHO | ICANON);
+	tcsetattr(0, TCSAFLUSH, &settings);
 
-	std::puts("\033[1;1H");
-    for (int y = 0; y < image.h; y++) {
-        for (int x = 0;  x < image.w; x++) {
-			RGBA px;
-			image.getPixel(px, x, y);
-			std::printf("\033[48;2;%d;%d;%dm ", px.r, px.g, px.b);
-        }
-		std::puts("");
-    }
+	/* */
+	std::printf("\033[18;12H");
+	std::printf("\033[6n");
+	char a, b, c;
+	std::cin >> c >> b >> c;
+	std::cout << a << b << c << std::endl;
+//	std::getline(std::cin, line);
+//	std::cout << line << std::endl;
+//	Image image {argv[1]};
+//	
+//	std::puts("\033[1;1H");
+//	for (int y = 0; y < image.h; y++) {
+//		for (int x = 0;  x < image.w; x++) {
+//			RGBA px;
+//			image.getPixel(px, x, y);
+//			std::printf("\033[48;2;%d;%d;%dm ", px.r, px.g, px.b);
+//		}
+//		std::puts("");
+//	}
 }
