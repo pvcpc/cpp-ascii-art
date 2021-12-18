@@ -12,19 +12,22 @@ public:
     int x, y, n;
     unsigned char * data;
     LoadImage (char* filename) {
-        int ox, oy, n;
-        unsigned char * odata = stbi_load(filename, &ox, &oy, &n, 0);
-        x = 500; y = (int)(x * oy / (2 * (float)ox));
+        int ox, oy;
+		unsigned char * odata = stbi_load(filename, &ox, &oy, &n, 0);
+        data = stbi_load(filename, &x, &y, &n, 0);
+        x = 100; 
+		y = (int)(x * oy / (2 * (float)ox));
 
         data = new unsigned char[x * y * n];
         stbir_resize_uint8(odata, ox, oy, 0, data, x, y, 0, n);
         stbi_image_free(odata);
     }
+	~LoadImage() { delete[] data; }
 
     std::tuple<unsigned char, unsigned char, unsigned char> getPixel(int x, int y) {
-        unsigned char r = data[(y * this->x + x) * 3];
-        unsigned char g = data[(y * this->x + x) * 3 + 1];
-        unsigned char b = data[(y * this->x + x) * 3 + 2];
+        unsigned char r = data[(y * this->x + x) * n];
+        unsigned char g = data[(y * this->x + x) * n + 1];
+        unsigned char b = data[(y * this->x + x) * n + 2];
         return {r, g, b};
     }
 };
@@ -67,9 +70,10 @@ int main (int argc, char** argv) {
             float gray = 0.299 * r + 0.587 * g + 0.114 * b;
             int currIndex = choose_color(rgb);
 
-            std::cout << "\u001b[38;5;" + std::to_string(currIndex) + 'm' + codelib[(int)((count - 1) * gray / 255.0f)];
+			std::printf("\033[48;2;%d;%d;%dm ", r, g, b);
+            // std::cout << "\033[38;5;" + std::to_string(currIndex) + 'm' + codelib[(int)((count - 1) * gray / 255.0f)];
             // std::cout << codelib[(int)((count - 1) * gray / 255.0f)];
         }
-        std::cout << std::endl;
+		std::puts("");
     }
 }
