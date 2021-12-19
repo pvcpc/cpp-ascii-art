@@ -56,24 +56,61 @@ getPixelV(
 	getPixel(px, im, x, y, sw);
 }
 
-
-int 
-main(int argc, char* argv[]) 
-{
-	/* */
-	struct winsize ws;
-	ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
-
-	/* */
-	cv::Mat im = cv::imread(argv[1]);
-	View view {ws.ws_col, ws.ws_row};
-	std::printf("\033[0;0H");
-	for (int y = 0; y < ws.ws_row; ++y) {
-		for (int x = 0; x < ws.ws_col; ++x) {
+static void
+displayFrame(
+	cv::Mat const &im,
+	View const &view
+) {
+	std::printf("\033[1;1H");
+	for (int y = 0; y < view.h; ++y) {
+		for (int x = 0; x < view.w; ++x) {
 			RGB px;
 			getPixelV(px, im, view, x, y);
 			std::printf("\033[48;2;%d;%d;%dm ", px.r, px.g, px.b);
 		}
 		std::puts("");
 	}
+	std::fflush(stdout);
+}
+
+int 
+main(int argc, char* argv[]) 
+{
+	if (argc <= 1) {
+		std::fputs("no input image/video file specified.\n", stderr);
+		std::fputs("usage: ascii [FILE]\n", stderr);
+		return 1;
+	}
+
+	/* use a large stdout buffer for the framebuffer */
+	std::setvbuf(stdout, NULL, _IOFBF, 1 << 30); /* 1GB buffer */
+
+	/* get terminal size */
+	struct winsize ws;
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws);
+	View view {ws.ws_col, ws.ws_row};
+
+	/* images */
+	std::string file {argv[1]};
+	if (cv::haveImageReader(file)) {
+		cv::Mat im = cv::imread(argv[1]);
+		displayFrame(im, view);
+		std::getchar();
+	}
+	/* videos */
+	else {
+		cv::VideoCapture vc;
+		if (vc.open(file)) {
+			cv::Mat im;
+			while (vc.read(im)) {
+				displayFrame(im, view);
+			}
+		}
+		else {
+			std::fprintf(stderr, "cannot open video %s.\n", file);
+			return 2;
+		}
+	}
+
+	return 0;
 }
